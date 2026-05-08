@@ -1,0 +1,46 @@
+# ============================================================
+# Weather Bot — Cron Schedule
+# ============================================================
+# To install: run  crontab -e  on your VPS and paste these lines.
+#
+# IMPORTANT: Replace /home/YOUR_USER/weather_bot with the actual
+# path where you uploaded the bot files.
+#
+# All times are UTC. Adjust if your VPS clock is set differently.
+#   Malta    CET  = UTC+1  (standard) / CEST = UTC+2 (summer)
+#   Roatan   CST  = UTC-6  (all year)
+#
+# Malta 07:30 CET  = 06:30 UTC (winter) / 05:30 UTC (summer)
+# Roatan 06:30 CST = 12:30 UTC
+# ============================================================
+
+SHELL=/bin/bash
+BOT_DIR=/home/YOUR_USER/weather_bot
+
+# ── Bitcoin Club Malta Weather ─────────────────────────────
+# Daily morning forecast — 07:30 CET (winter: 06:30 UTC)
+30 6 * * 1-5 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account bcm --type daily >> logs/cron.log 2>&1
+
+# Daily morning forecast — 07:30 CEST (summer: 05:30 UTC)
+# Uncomment the line below and comment the line above during summer (last Sun Mar → last Sun Oct)
+# 30 5 * * 1-5 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account bcm --type daily >> logs/cron.log 2>&1
+
+# Weekend morning forecast — Saturday 08:00 CET (07:00 UTC)
+0 7 * * 6 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account bcm --type daily >> logs/cron.log 2>&1
+
+# Weekly weather summary — Sunday 09:00 CET (08:00 UTC)
+0 8 * * 0 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account bcm --type weekly >> logs/cron.log 2>&1
+
+# ── Roatan Weather Bot ─────────────────────────────────────
+# Daily morning forecast — 06:30 CST (12:30 UTC)
+30 12 * * 1-5 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account roatan --type daily >> logs/cron.log 2>&1
+
+# Weekend forecast — Saturday 07:00 CST (13:00 UTC)
+0 13 * * 6 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account roatan --type daily >> logs/cron.log 2>&1
+
+# Weekly weather summary — Sunday 09:00 CST (15:00 UTC)
+0 15 * * 0 cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account roatan --type weekly >> logs/cron.log 2>&1
+
+# ── Manual alert command (run on demand, not scheduled) ────
+# Example: post a storm alert for Roatan
+# cd $BOT_DIR && source venv/bin/activate && python weather_bot.py --account roatan --type alert --message "Tropical storm developing. Stay alert."

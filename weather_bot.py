@@ -14,9 +14,9 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-MALTA_LAT,  MALTA_LON  = 35.9375,  14.3754
+MALTA_LAT, MALTA_LON = 35.9375, 14.3754
 ROATAN_LAT, ROATAN_LON = 16.3194, -86.5355
-MALTA_TZ  = ZoneInfo("Europe/Malta")
+MALTA_TZ = ZoneInfo("Europe/Malta")
 ROATAN_TZ = ZoneInfo("America/Tegucigalpa")
 OWM_KEY = os.getenv("OWM_API_KEY", "")
 OWM_BASE = "https://api.openweathermap.org/data/2.5"
@@ -33,7 +33,7 @@ def fetch_weather(lat, lon):
     f = fr.json()
     slots = f["list"][:8]
     temps = [s["main"]["temp"] for s in slots]
-    rain  = [s.get("pop", 0) * 100 for s in slots]
+    rain = [s.get("pop", 0) * 100 for s in slots]
     return {
         "temp": round(c["main"]["temp"]),
         "feels_like": round(c["main"]["feels_like"]),
@@ -47,7 +47,7 @@ def fetch_weather(lat, lon):
         "clouds": c["clouds"]["all"],
         "visibility": round(c.get("visibility", 10000) / 1000, 1),
         "sunrise": datetime.fromtimestamp(c["sys"]["sunrise"]),
-        "sunset":  datetime.fromtimestamp(c["sys"]["sunset"]),
+        "sunset": datetime.fromtimestamp(c["sys"]["sunset"]),
     }
 
 def _wind_dir(deg):
@@ -57,14 +57,13 @@ def _wind_dir(deg):
 def _sky(desc, clouds):
     d = desc.lower()
     if "thunder" in d: return "⛈️"
-    if "rain" in d:    return "🌧️"
+    if "rain" in d: return "🌧️"
     if "drizzle" in d: return "🌦️"
-    if "snow" in d:    return "❄️"
+    if "snow" in d: return "❄️"
     if "mist" in d or "fog" in d: return "🌫️"
-    if clouds < 20:    return "☀️"
-    if clouds < 60:    return "⛅"
+    if clouds < 20: return "☀️"
+    if clouds < 60: return "⛅"
     return "☁️"
-
 
 def get_x_client(api_key, api_secret, access_token, access_secret):
     return tweepy.Client(
@@ -79,6 +78,14 @@ def post_to_x(client, text, account_name=""):
         resp = client.create_tweet(text=text)
         log.info("SUCCESS: X post published for %s — tweet ID: %s", account_name, resp.data["id"])
         return True
+    except tweepy.errors.Unauthorized as e:
+        log.error("FAILED: 401 Unauthorized for %s", account_name)
+        if hasattr(e, 'response') and e.response is not None:
+            log.error("  HTTP status: %s", e.response.status_code)
+            log.error("  Response body: %s", e.response.text)
+            log.error("  Response headers: %s", dict(e.response.headers))
+        traceback.print_exc()
+        return False
     except tweepy.TweepyException as e:
         log.error("FAILED: X post for %s: %s", account_name, e)
         traceback.print_exc()
@@ -149,7 +156,6 @@ def fmt_bcm_weekly_x(w):
         f"#MaltaWeather #BitcoinClubMalta 🇲🇹"
     )
 
-
 def fmt_roatan_daily_x(w):
     now = datetime.now(ROATAN_TZ)
     sky = _sky(w["description"], w["clouds"])
@@ -209,7 +215,6 @@ def fmt_alert_x(account, w, message):
         f"#RoatanWeather #WeatherAlert #BayIslands"
     )
 
-
 def run_bcm(post_type, alert_message, dry_run):
     log.info("=== BCM (@RealMaltaWx) — %s ===", post_type.upper())
     api_key    = os.getenv("BCM_X_API_KEY", "")
@@ -262,7 +267,6 @@ def run_bcm(post_type, alert_message, dry_run):
         log.warning("BCM LinkedIn credentials not set — skipping LinkedIn.")
     return ok
 
-
 def run_roatan(post_type, alert_message, dry_run):
     log.info("=== Roatan (@RoatanWeather) — %s ===", post_type.upper())
     api_key    = os.getenv("ROA_X_API_KEY", "")
@@ -274,6 +278,9 @@ def run_roatan(post_type, alert_message, dry_run):
 
     log.info("ROA X keys present: api_key=%s, api_secret=%s, acc_token=%s, acc_secret=%s",
              bool(api_key), bool(api_secret), bool(acc_token), bool(acc_secret))
+    log.info("ROA X key prefixes: api_key=%s..., acc_token=%s...",
+             api_key[:8] if api_key else "MISSING",
+             acc_token[:20] if acc_token else "MISSING")
 
     log.info("Fetching Roatan weather...")
     w = fetch_weather(ROATAN_LAT, ROATAN_LON)
@@ -314,7 +321,6 @@ def run_roatan(post_type, alert_message, dry_run):
     else:
         log.warning("ROA LinkedIn credentials not set — skipping LinkedIn.")
     return ok
-
 
 def main():
     parser = argparse.ArgumentParser()

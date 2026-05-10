@@ -7,7 +7,7 @@ import requests, tweepy
 from dotenv import load_dotenv
 
 load_dotenv()
-logging.basicConfig(
+logging.basicConfig(h
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
@@ -97,7 +97,7 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
-        "LinkedIn-Version": "202401",
+        "LinkedIn-Version": "202505",
         "X-Restli-Protocol-Version": "2.0.0",
     }
     payload = {

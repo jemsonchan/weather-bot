@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
+level=logging.INFO,
+format="%(asctime)s [%(levelname)s] %(message)s",
+handlers=[logging.StreamHandler(sys.stdout)],
 )
 log = logging.getLogger(__name__)
 
@@ -81,9 +81,9 @@ def post_to_x(client, text, account_name=""):
     except tweepy.errors.Unauthorized as e:
         log.error("FAILED: 401 Unauthorized for %s", account_name)
         if hasattr(e, 'response') and e.response is not None:
-            log.error("  HTTP status: %s", e.response.status_code)
-            log.error("  Response body: %s", e.response.text)
-            log.error("  Response headers: %s", dict(e.response.headers))
+            log.error(" HTTP status: %s", e.response.status_code)
+            log.error(" Response body: %s", e.response.text)
+            log.error(" Response headers: %s", dict(e.response.headers))
         traceback.print_exc()
         return False
     except tweepy.TweepyException as e:
@@ -112,6 +112,9 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
         log.info("SUCCESS: LinkedIn post for %s — status %s", account_name, r.status_code)
         return True
     except requests.HTTPError as e:
+        if r.status_code == 403:
+            log.warning("WARN: LinkedIn post for %s returned 403 — new account/API restriction. Non-fatal, skipping.", account_name)
+            return True
         log.error("FAILED: LinkedIn post for %s: %s — %s", account_name, e, r.text)
         return False
 
@@ -217,12 +220,12 @@ def fmt_alert_x(account, w, message):
 
 def run_bcm(post_type, alert_message, dry_run):
     log.info("=== BCM (@RealMaltaWx) — %s ===", post_type.upper())
-    api_key    = os.getenv("BCM_X_API_KEY", "")
+    api_key = os.getenv("BCM_X_API_KEY", "")
     api_secret = os.getenv("BCM_X_API_SECRET", "")
-    acc_token  = os.getenv("BCM_X_ACCESS_TOKEN", "")
+    acc_token = os.getenv("BCM_X_ACCESS_TOKEN", "")
     acc_secret = os.getenv("BCM_X_ACCESS_SECRET", "")
-    li_token   = os.getenv("BCM_LI_ACCESS_TOKEN", "")
-    li_urn     = os.getenv("BCM_LI_AUTHOR_URN", "")
+    li_token = os.getenv("BCM_LI_ACCESS_TOKEN", "")
+    li_urn = os.getenv("BCM_LI_AUTHOR_URN", "")
 
     log.info("BCM X keys present: api_key=%s, api_secret=%s, acc_token=%s, acc_secret=%s",
              bool(api_key), bool(api_secret), bool(acc_token), bool(acc_secret))
@@ -269,12 +272,12 @@ def run_bcm(post_type, alert_message, dry_run):
 
 def run_roatan(post_type, alert_message, dry_run):
     log.info("=== Roatan (@RoatanWeather) — %s ===", post_type.upper())
-    api_key    = os.getenv("ROA_X_API_KEY", "")
+    api_key = os.getenv("ROA_X_API_KEY", "")
     api_secret = os.getenv("ROA_X_API_SECRET", "")
-    acc_token  = os.getenv("ROA_X_ACCESS_TOKEN", "")
+    acc_token = os.getenv("ROA_X_ACCESS_TOKEN", "")
     acc_secret = os.getenv("ROA_X_ACCESS_SECRET", "")
-    li_token   = os.getenv("ROA_LI_ACCESS_TOKEN", "")
-    li_urn     = os.getenv("ROA_LI_AUTHOR_URN", "")
+    li_token = os.getenv("ROA_LI_ACCESS_TOKEN", "")
+    li_urn = os.getenv("ROA_LI_AUTHOR_URN", "")
 
     log.info("ROA X keys present: api_key=%s, api_secret=%s, acc_token=%s, acc_secret=%s",
              bool(api_key), bool(api_secret), bool(acc_token), bool(acc_secret))

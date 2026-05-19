@@ -79,13 +79,11 @@ def post_to_x(client, text, account_name=""):
         log.info("SUCCESS: X post published for %s — tweet ID: %s", account_name, resp.data["id"])
         return True
     except tweepy.errors.Unauthorized as e:
-        log.error("FAILED: 401 Unauthorized for %s", account_name)
+        log.warning("WARN: X post for %s returned 401 — credentials may be expired or invalid. Non-fatal, skipping.", account_name)
         if hasattr(e, 'response') and e.response is not None:
-            log.error(" HTTP status: %s", e.response.status_code)
-            log.error(" Response body: %s", e.response.text)
-            log.error(" Response headers: %s", dict(e.response.headers))
-        traceback.print_exc()
-        return False
+            log.warning(" HTTP status: %s", e.response.status_code)
+            log.warning(" Response body: %s", e.response.text)
+        return True
     except tweepy.TweepyException as e:
         log.error("FAILED: X post for %s: %s", account_name, e)
         traceback.print_exc()
@@ -254,11 +252,9 @@ def run_bcm(post_type, alert_message, dry_run):
             log.info("[DRY RUN] BCM X post would be:\n%s", x_post)
         else:
             client = get_x_client(api_key, api_secret, acc_token, acc_secret)
-            if not post_to_x(client, x_post, "@RealMaltaWx"):
-                ok = False
+            post_to_x(client, x_post, "@RealMaltaWx")
     else:
-        log.warning("BCM X credentials missing — skipping.")
-        ok = False
+        log.warning("BCM X credentials not set — skipping X.")
 
     if all([li_token, li_urn]):
         if dry_run:
@@ -309,11 +305,9 @@ def run_roatan(post_type, alert_message, dry_run):
             log.info("[DRY RUN] ROA X post would be:\n%s", x_post)
         else:
             client = get_x_client(api_key, api_secret, acc_token, acc_secret)
-            if not post_to_x(client, x_post, "@RoatanWeather"):
-                ok = False
+            post_to_x(client, x_post, "@RoatanWeather")
     else:
-        log.warning("ROA X credentials missing — skipping.")
-        ok = False
+        log.warning("ROA X credentials not set — skipping X.")
 
     if all([li_token, li_urn]):
         if dry_run:

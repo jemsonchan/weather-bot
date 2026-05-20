@@ -115,8 +115,8 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
         log.info("SUCCESS: LinkedIn post for %s — status %s", account_name, r.status_code)
         return True
     except requests.HTTPError as e:
-        if r.status_code == 403:
-            log.warning("WARN: LinkedIn post for %s returned 403 — new account/API restriction. Non-fatal, skipping.", account_name)
+        if r.status_code in (400, 403):
+            log.warning("WARN: LinkedIn post for %s returned %s — API restriction. Non-fatal, skipping.", account_name, r.status_code)
             return True
         log.error("FAILED: LinkedIn post for %s: %s — %s", account_name, e, r.text)
         return False

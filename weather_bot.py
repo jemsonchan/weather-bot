@@ -5,6 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests, tweepy
 from dotenv import load_dotenv
+from basic_nostr import NostrClient
 
 load_dotenv()
 logging.basicConfig(
@@ -116,6 +117,17 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
         log.error("FAILED: LinkedIn post for %s: %s — %s", account_name, e, r.text)
         return False
 
+def post_to_nostr(nsec, text, account_name=""):
+    log.info("Attempting Nostr post for %s (%d chars)...", account_name, len(text))
+    try:
+        with NostrClient(nsec) as nostr:
+            nostr.make_post(text)
+        log.info("SUCCESS: Nostr post published for %s", account_name)
+        return True
+    except Exception as e:
+        log.warning("WARN: Nostr post for %s failed: %s. Non-fatal, skipping.", account_name, e)
+        return True
+
 def fmt_bcm_daily_x(w):
     now = datetime.now(MALTA_TZ)
     sky = _sky(w["description"], w["clouds"])
@@ -224,6 +236,7 @@ def run_bcm(post_type, alert_message, dry_run):
     acc_secret = os.getenv("BCM_X_ACCESS_SECRET", "")
     li_token = os.getenv("BCM_LI_ACCESS_TOKEN", "")
     li_urn = os.getenv("BCM_LI_AUTHOR_URN", "")
+    nostr_nsec = os.getenv("NOSTR_NSEC", "")
 
     log.info("BCM X keys present: api_key=%s, api_secret=%s, acc_token=%s, acc_secret=%s",
              bool(api_key), bool(api_secret), bool(acc_token), bool(acc_secret))
@@ -264,6 +277,14 @@ def run_bcm(post_type, alert_message, dry_run):
                 ok = False
     else:
         log.warning("BCM LinkedIn credentials not set — skipping LinkedIn.")
+
+    if nostr_nsec:
+        if dry_run:
+            log.info("[DRY RUN] BCM Nostr post would be:\n%s", li_post)
+        else:
+            post_to_nostr(nostr_nsec, li_post, "BCM Nostr")
+    else:
+        log.warning("NOSTR_NSEC not set — skipping Nostr.")
     return ok
 
 def run_roatan(post_type, alert_message, dry_run):
@@ -274,6 +295,7 @@ def run_roatan(post_type, alert_message, dry_run):
     acc_secret = os.getenv("ROA_X_ACCESS_SECRET", "")
     li_token = os.getenv("ROA_LI_ACCESS_TOKEN", "")
     li_urn = os.getenv("ROA_LI_AUTHOR_URN", "")
+    nostr_nsec = os.getenv("NOSTR_NSEC", "")
 
     log.info("ROA X keys present: api_key=%s, api_secret=%s, acc_token=%s, acc_secret=%s",
              bool(api_key), bool(api_secret), bool(acc_token), bool(acc_secret))
@@ -317,6 +339,14 @@ def run_roatan(post_type, alert_message, dry_run):
                 ok = False
     else:
         log.warning("ROA LinkedIn credentials not set — skipping LinkedIn.")
+
+    if nostr_nsec:
+        if dry_run:
+            log.info("[DRY RUN] ROA Nostr post would be:\n%s", li_post)
+        else:
+            post_to_nostr(nostr_nsec, li_post, "ROA Nostr")
+    else:
+        log.warning("NOSTR_NSEC not set — skipping Nostr.")
     return ok
 
 def main():

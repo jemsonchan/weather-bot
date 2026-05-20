@@ -17,6 +17,7 @@
 #   BCM_LI_ACCESS_TOKEN, BCM_LI_AUTHOR_URN
 #   ROA_X_API_KEY, ROA_X_API_SECRET, ROA_X_ACCESS_TOKEN, ROA_X_ACCESS_SECRET
 #   ROA_LI_ACCESS_TOKEN, ROA_LI_AUTHOR_URN
+#   NOSTR_NSEC
 # ============================================================
 
 name: Weather Bot Posts
@@ -88,6 +89,7 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type daily
 
   post-roatan-daily:
@@ -110,6 +112,7 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type daily
 
   post-bcm-weekend:
@@ -132,6 +135,7 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type daily
 
   post-roatan-weekend:
@@ -154,6 +158,7 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type daily
 
   post-bcm-weekly:
@@ -176,6 +181,7 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type weekly
 
   post-roatan-weekly:
@@ -198,6 +204,7 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type weekly
 
   post-manual:
@@ -226,6 +233,7 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: |
           python weather_bot.py \
             --account "${{ github.event.inputs.account }}" \

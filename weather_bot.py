@@ -79,8 +79,12 @@ def post_to_x(client, text, account_name=""):
         resp = client.create_tweet(text=text)
         log.info("SUCCESS: X post published for %s — tweet ID: %s", account_name, resp.data["id"])
         return True
-    except tweepy.errors.Unauthorized as e:
-        log.warning("WARN: X post for %s returned 401 — credentials may be expired or invalid. Non-fatal, skipping.", account_name)
+    except (tweepy.errors.Unauthorized, tweepy.errors.Forbidden) as e:
+        if isinstance(e, tweepy.errors.Unauthorized):
+            reason = "credentials may be expired or invalid"
+        else:
+            reason = "duplicate content or permission issue"
+        log.warning("WARN: X post for %s returned %s — %s. Non-fatal, skipping.", account_name, type(e).__name__, reason)
         if hasattr(e, 'response') and e.response is not None:
             log.warning(" HTTP status: %s", e.response.status_code)
             log.warning(" Response body: %s", e.response.text)
@@ -96,7 +100,7 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
-        "LinkedIn-Version": "202605",
+        "LinkedIn-Version": "202604",
         "X-Restli-Protocol-Version": "2.0.0",
     }
     payload = {

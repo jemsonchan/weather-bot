@@ -142,7 +142,7 @@ def fmt_bcm_daily_x(w):
         f"💨 Wind: {w['wind_speed']} km/h {w['wind_dir']}\n"
         f"💧 Humidity: {w['humidity']}%\n"
         f"🌧️ Rain chance: {w['rain_chance']}%\n\n"
-        f"#MaltaWeather #BitcoinClubMalta 🇲🇹"
+        f"#MaltaWeather 🇲🇹"
     )
 
 def fmt_bcm_daily_li(w):
@@ -159,7 +159,7 @@ def fmt_bcm_daily_li(w):
         f"• Humidity: {w['humidity']}% | Rain: {w['rain_chance']}%\n"
         f"• Visibility: {w['visibility']} km\n"
         f"• Sunrise: {w['sunrise'].strftime('%H:%M')} | Sunset: {w['sunset'].strftime('%H:%M')}\n\n"
-        f"#MaltaWeather #BitcoinClubMalta #Malta #MediterraneanWeather"
+        f"#MaltaWeather 🇲🇹"
     )
 
 def fmt_bcm_weekly_x(w):
@@ -170,7 +170,7 @@ def fmt_bcm_weekly_x(w):
         f"🌡️ High {w['high']}°C | Low {w['low']}°C\n"
         f"💨 Wind: {w['wind_speed']} km/h {w['wind_dir']}\n"
         f"🌧️ Rain chance: {w['rain_chance']}%\n\n"
-        f"#MaltaWeather #BitcoinClubMalta 🇲🇹"
+        f"#MaltaWeather 🇲🇹"
     )
 
 def fmt_roatan_daily_x(w):
@@ -222,7 +222,7 @@ def fmt_alert_x(account, w, message):
             f"🌡️ Temp: {w['temp']}°C | 💨 Wind: {w['wind_speed']} km/h {w['wind_dir']}\n"
             f"🌧️ Rain: {w['rain_chance']}%\n\n"
             f"Monitor @MaltaMet for official updates.\n"
-            f"#MaltaWeather #WeatherAlert #Malta 🇲🇹"
+            f"#MaltaWeather 🇲🇹"
         )
     return (
         f"⚠️ WEATHER ALERT — Roatan, Bay Islands\n\n{message}\n\n"

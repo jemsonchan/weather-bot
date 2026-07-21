@@ -1,0 +1,30 @@
+name: LinkedIn Token Check
+
+on:
+  schedule:
+    # Every Monday 06:00 UTC — enough lead time to re-auth before posts break.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Warn before LinkedIn tokens expire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Check token expiry
+        env:
+          BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
+          BCM_LI_REFRESH_TOKEN: ${{ secrets.BCM_LI_REFRESH_TOKEN }}
+          BCM_LI_CLIENT_ID: ${{ secrets.BCM_LI_CLIENT_ID }}
+          BCM_LI_CLIENT_SECRET: ${{ secrets.BCM_LI_CLIENT_SECRET }}
+          ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
+          ROA_LI_REFRESH_TOKEN: ${{ secrets.ROA_LI_REFRESH_TOKEN }}
+          ROA_LI_CLIENT_ID: ${{ secrets.ROA_LI_CLIENT_ID }}
+          ROA_LI_CLIENT_SECRET: ${{ secrets.ROA_LI_CLIENT_SECRET }}
+        run: python check_tokens.py

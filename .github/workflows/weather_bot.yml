@@ -15,8 +15,10 @@
 #   OWM_API_KEY
 #   BCM_X_API_KEY, BCM_X_API_SECRET, BCM_X_ACCESS_TOKEN, BCM_X_ACCESS_SECRET
 #   BCM_LI_ACCESS_TOKEN, BCM_LI_AUTHOR_URN
+#   BCM_LI_REFRESH_TOKEN, BCM_LI_CLIENT_ID, BCM_LI_CLIENT_SECRET  (auto-refresh, optional)
 #   ROA_X_API_KEY, ROA_X_API_SECRET, ROA_X_ACCESS_TOKEN, ROA_X_ACCESS_SECRET
 #   ROA_LI_ACCESS_TOKEN, ROA_LI_AUTHOR_URN
+#   ROA_LI_REFRESH_TOKEN, ROA_LI_CLIENT_ID, ROA_LI_CLIENT_SECRET  (auto-refresh, optional)
 #   NOSTR_NSEC
 # ============================================================
 
@@ -89,6 +91,9 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          BCM_LI_REFRESH_TOKEN: ${{ secrets.BCM_LI_REFRESH_TOKEN }}
+          BCM_LI_CLIENT_ID: ${{ secrets.BCM_LI_CLIENT_ID }}
+          BCM_LI_CLIENT_SECRET: ${{ secrets.BCM_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type daily
 
@@ -112,6 +117,9 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          ROA_LI_REFRESH_TOKEN: ${{ secrets.ROA_LI_REFRESH_TOKEN }}
+          ROA_LI_CLIENT_ID: ${{ secrets.ROA_LI_CLIENT_ID }}
+          ROA_LI_CLIENT_SECRET: ${{ secrets.ROA_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type daily
 
@@ -135,6 +143,9 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          BCM_LI_REFRESH_TOKEN: ${{ secrets.BCM_LI_REFRESH_TOKEN }}
+          BCM_LI_CLIENT_ID: ${{ secrets.BCM_LI_CLIENT_ID }}
+          BCM_LI_CLIENT_SECRET: ${{ secrets.BCM_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type daily
 
@@ -158,6 +169,9 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          ROA_LI_REFRESH_TOKEN: ${{ secrets.ROA_LI_REFRESH_TOKEN }}
+          ROA_LI_CLIENT_ID: ${{ secrets.ROA_LI_CLIENT_ID }}
+          ROA_LI_CLIENT_SECRET: ${{ secrets.ROA_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type daily
 
@@ -181,6 +195,9 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          BCM_LI_REFRESH_TOKEN: ${{ secrets.BCM_LI_REFRESH_TOKEN }}
+          BCM_LI_CLIENT_ID: ${{ secrets.BCM_LI_CLIENT_ID }}
+          BCM_LI_CLIENT_SECRET: ${{ secrets.BCM_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account bcm --type weekly
 
@@ -204,6 +221,9 @@ jobs:
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          ROA_LI_REFRESH_TOKEN: ${{ secrets.ROA_LI_REFRESH_TOKEN }}
+          ROA_LI_CLIENT_ID: ${{ secrets.ROA_LI_CLIENT_ID }}
+          ROA_LI_CLIENT_SECRET: ${{ secrets.ROA_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: python weather_bot.py --account roatan --type weekly
 
@@ -227,12 +247,18 @@ jobs:
           BCM_X_ACCESS_SECRET: ${{ secrets.BCM_X_ACCESS_SECRET }}
           BCM_LI_ACCESS_TOKEN: ${{ secrets.BCM_LI_ACCESS_TOKEN }}
           BCM_LI_AUTHOR_URN: ${{ secrets.BCM_LI_AUTHOR_URN }}
+          BCM_LI_REFRESH_TOKEN: ${{ secrets.BCM_LI_REFRESH_TOKEN }}
+          BCM_LI_CLIENT_ID: ${{ secrets.BCM_LI_CLIENT_ID }}
+          BCM_LI_CLIENT_SECRET: ${{ secrets.BCM_LI_CLIENT_SECRET }}
           ROA_X_API_KEY: ${{ secrets.ROA_X_API_KEY }}
           ROA_X_API_SECRET: ${{ secrets.ROA_X_API_SECRET }}
           ROA_X_ACCESS_TOKEN: ${{ secrets.ROA_X_ACCESS_TOKEN }}
           ROA_X_ACCESS_SECRET: ${{ secrets.ROA_X_ACCESS_SECRET }}
           ROA_LI_ACCESS_TOKEN: ${{ secrets.ROA_LI_ACCESS_TOKEN }}
           ROA_LI_AUTHOR_URN: ${{ secrets.ROA_LI_AUTHOR_URN }}
+          ROA_LI_REFRESH_TOKEN: ${{ secrets.ROA_LI_REFRESH_TOKEN }}
+          ROA_LI_CLIENT_ID: ${{ secrets.ROA_LI_CLIENT_ID }}
+          ROA_LI_CLIENT_SECRET: ${{ secrets.ROA_LI_CLIENT_SECRET }}
           NOSTR_NSEC: ${{ secrets.NOSTR_NSEC }}
         run: |
           python weather_bot.py \

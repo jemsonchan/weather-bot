@@ -15,6 +15,8 @@ handlers=[logging.StreamHandler(sys.stdout)],
 )
 log = logging.getLogger(__name__)
 
+IN_ACTIONS = bool(os.getenv("GITHUB_ACTIONS"))
+
 MALTA_LAT, MALTA_LON = 35.9375, 14.3754
 ROATAN_LAT, ROATAN_LON = 16.3194, -86.5355
 MALTA_TZ = ZoneInfo("Europe/Malta")
@@ -66,6 +68,11 @@ def _sky(desc, clouds):
     if clouds < 60: return "⛅"
     return "☁️"
 
+def annotate(title, message):
+    log.warning("%s: %s", title, message)
+    if IN_ACTIONS:
+        print(f"::warning title={title}::{message}", flush=True)
+
 def get_x_client(api_key, api_secret, access_token, access_secret):
     return tweepy.Client(
         consumer_key=api_key, consumer_secret=api_secret,
@@ -81,18 +88,43 @@ def post_to_x(client, text, account_name=""):
         return True
     except (tweepy.errors.Unauthorized, tweepy.errors.Forbidden) as e:
         if isinstance(e, tweepy.errors.Unauthorized):
-            reason = "credentials may be expired or invalid"
+            reason = "credentials expired or invalid"
         else:
             reason = "duplicate content or permission issue"
-        log.warning("WARN: X post for %s returned %s — %s. Non-fatal, skipping.", account_name, type(e).__name__, reason)
-        if hasattr(e, 'response') and e.response is not None:
-            log.warning(" HTTP status: %s", e.response.status_code)
-            log.warning(" Response body: %s", e.response.text)
-        return True
+        body = e.response.text if getattr(e, "response", None) is not None else ""
+        annotate(f"X post failed ({account_name})", f"{type(e).__name__} — {reason}. {body}")
+        return False
     except tweepy.TweepyException as e:
         log.error("FAILED: X post for %s: %s", account_name, e)
         traceback.print_exc()
         return False
+
+LI_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
+
+def linkedin_access_token(prefix):
+    """LinkedIn access tokens expire after 60 days; exchange the year-long refresh
+    token for a fresh one when the app is enrolled for programmatic refresh."""
+    static = os.getenv(f"{prefix}_LI_ACCESS_TOKEN", "")
+    refresh_token = os.getenv(f"{prefix}_LI_REFRESH_TOKEN", "")
+    client_id = os.getenv(f"{prefix}_LI_CLIENT_ID", "")
+    client_secret = os.getenv(f"{prefix}_LI_CLIENT_SECRET", "")
+    if not all([refresh_token, client_id, client_secret]):
+        return static
+    try:
+        r = requests.post(LI_TOKEN_URL, timeout=15, data={
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "client_id": client_id,
+            "client_secret": client_secret,
+        })
+        r.raise_for_status()
+        payload = r.json()
+        log.info("%s LinkedIn: access token refreshed (expires in %ss)", prefix, payload.get("expires_in", "?"))
+        return payload["access_token"]
+    except (requests.RequestException, ValueError, KeyError) as e:
+        annotate(f"LinkedIn token refresh failed ({prefix})",
+                 f"{e} — falling back to the stored access token.")
+        return static
 
 def post_to_linkedin(access_token, author_urn, text, account_name=""):
     log.info("Attempting LinkedIn post for %s...", account_name)
@@ -115,10 +147,10 @@ def post_to_linkedin(access_token, author_urn, text, account_name=""):
         log.info("SUCCESS: LinkedIn post for %s — status %s", account_name, r.status_code)
         return True
     except requests.HTTPError as e:
-        if r.status_code in (400, 403):
-            log.warning("WARN: LinkedIn post for %s returned %s — API restriction. Non-fatal, skipping.", account_name, r.status_code)
-            return True
-        log.error("FAILED: LinkedIn post for %s: %s — %s", account_name, e, r.text)
+        annotate(f"LinkedIn post failed ({account_name})", f"{e} — {e.response.text}")
+        return False
+    except requests.RequestException as e:
+        annotate(f"LinkedIn post failed ({account_name})", str(e))
         return False
 
 def post_to_nostr(nsec, text, account_name=""):
@@ -129,8 +161,8 @@ def post_to_nostr(nsec, text, account_name=""):
         log.info("SUCCESS: Nostr post published for %s", account_name)
         return True
     except Exception as e:
-        log.warning("WARN: Nostr post for %s failed: %s. Non-fatal, skipping.", account_name, e)
-        return True
+        annotate(f"Nostr post failed ({account_name})", str(e))
+        return False
 
 def fmt_bcm_daily_x(w):
     now = datetime.now(MALTA_TZ)
@@ -238,7 +270,7 @@ def run_bcm(post_type, alert_message, dry_run):
     api_secret = os.getenv("BCM_X_API_SECRET", "")
     acc_token = os.getenv("BCM_X_ACCESS_TOKEN", "")
     acc_secret = os.getenv("BCM_X_ACCESS_SECRET", "")
-    li_token = os.getenv("BCM_LI_ACCESS_TOKEN", "")
+    li_token = linkedin_access_token("BCM")
     li_urn = os.getenv("BCM_LI_AUTHOR_URN", "")
     nostr_nsec = os.getenv("NOSTR_NSEC", "")
 
@@ -261,15 +293,15 @@ def run_bcm(post_type, alert_message, dry_run):
         li_post = x_post
     else:
         log.error("Unknown post type: %s", post_type)
-        return False
+        return {"BCM": False}
 
-    ok = True
+    results = {}
     if all([api_key, api_secret, acc_token, acc_secret]):
         if dry_run:
             log.info("[DRY RUN] BCM X post would be:\n%s", x_post)
         else:
             client = get_x_client(api_key, api_secret, acc_token, acc_secret)
-            post_to_x(client, x_post, "@RealMaltaWx")
+            results["BCM X"] = post_to_x(client, x_post, "@RealMaltaWx")
     else:
         log.warning("BCM X credentials not set — skipping X.")
 
@@ -277,8 +309,7 @@ def run_bcm(post_type, alert_message, dry_run):
         if dry_run:
             log.info("[DRY RUN] BCM LinkedIn post would be:\n%s", li_post)
         else:
-            if not post_to_linkedin(li_token, li_urn, li_post, "BCM LinkedIn"):
-                ok = False
+            results["BCM LinkedIn"] = post_to_linkedin(li_token, li_urn, li_post, "BCM LinkedIn")
     else:
         log.warning("BCM LinkedIn credentials not set — skipping LinkedIn.")
 
@@ -286,10 +317,10 @@ def run_bcm(post_type, alert_message, dry_run):
         if dry_run:
             log.info("[DRY RUN] BCM Nostr post would be:\n%s", li_post)
         else:
-            post_to_nostr(nostr_nsec, li_post, "BCM Nostr")
+            results["BCM Nostr"] = post_to_nostr(nostr_nsec, li_post, "BCM Nostr")
     else:
         log.warning("NOSTR_NSEC not set — skipping Nostr.")
-    return ok
+    return results
 
 def run_roatan(post_type, alert_message, dry_run):
     log.info("=== Roatan (@RoatanWeather) — %s ===", post_type.upper())
@@ -297,7 +328,7 @@ def run_roatan(post_type, alert_message, dry_run):
     api_secret = os.getenv("ROA_X_API_SECRET", "")
     acc_token = os.getenv("ROA_X_ACCESS_TOKEN", "")
     acc_secret = os.getenv("ROA_X_ACCESS_SECRET", "")
-    li_token = os.getenv("ROA_LI_ACCESS_TOKEN", "")
+    li_token = linkedin_access_token("ROA")
     li_urn = os.getenv("ROA_LI_AUTHOR_URN", "")
     nostr_nsec = os.getenv("NOSTR_NSEC", "")
 
@@ -323,15 +354,15 @@ def run_roatan(post_type, alert_message, dry_run):
         li_post = x_post
     else:
         log.error("Unknown post type: %s", post_type)
-        return False
+        return {"ROA": False}
 
-    ok = True
+    results = {}
     if all([api_key, api_secret, acc_token, acc_secret]):
         if dry_run:
             log.info("[DRY RUN] ROA X post would be:\n%s", x_post)
         else:
             client = get_x_client(api_key, api_secret, acc_token, acc_secret)
-            post_to_x(client, x_post, "@RoatanWeather")
+            results["ROA X"] = post_to_x(client, x_post, "@RoatanWeather")
     else:
         log.warning("ROA X credentials not set — skipping X.")
 
@@ -339,8 +370,7 @@ def run_roatan(post_type, alert_message, dry_run):
         if dry_run:
             log.info("[DRY RUN] ROA LinkedIn post would be:\n%s", li_post)
         else:
-            if not post_to_linkedin(li_token, li_urn, li_post, "ROA LinkedIn"):
-                ok = False
+            results["ROA LinkedIn"] = post_to_linkedin(li_token, li_urn, li_post, "ROA LinkedIn")
     else:
         log.warning("ROA LinkedIn credentials not set — skipping LinkedIn.")
 
@@ -348,10 +378,10 @@ def run_roatan(post_type, alert_message, dry_run):
         if dry_run:
             log.info("[DRY RUN] ROA Nostr post would be:\n%s", li_post)
         else:
-            post_to_nostr(nostr_nsec, li_post, "ROA Nostr")
+            results["ROA Nostr"] = post_to_nostr(nostr_nsec, li_post, "ROA Nostr")
     else:
         log.warning("NOSTR_NSEC not set — skipping Nostr.")
-    return ok
+    return results
 
 def main():
     parser = argparse.ArgumentParser()
@@ -362,18 +392,24 @@ def main():
     args = parser.parse_args()
 
     log.info("Starting weather bot: account=%s type=%s dry_run=%s", args.account, args.post_type, args.dry_run)
-    all_ok = True
+    results = {}
     if args.account in ("bcm", "both"):
-        if not run_bcm(args.post_type, args.message, args.dry_run):
-            all_ok = False
+        results.update(run_bcm(args.post_type, args.message, args.dry_run))
     if args.account in ("roatan", "both"):
-        if not run_roatan(args.post_type, args.message, args.dry_run):
-            all_ok = False
+        results.update(run_roatan(args.post_type, args.message, args.dry_run))
 
-    if all_ok:
-        log.info("All posts completed successfully.")
-    else:
-        log.error("One or more posts FAILED. Check logs above.")
+    if not results:
+        log.info("No channels attempted (dry run, or no credentials configured).")
+        return
+
+    published = [c for c, ok in results.items() if ok]
+    failed = [c for c, ok in results.items() if not ok]
+    log.info("Published: %s | Failed: %s", ", ".join(published) or "none", ", ".join(failed) or "none")
+
+    # A single dead channel shouldn't mask the ones that did publish — only a
+    # total blackout is worth failing the run over.
+    if not published:
+        log.error("Every channel FAILED. Check logs above.")
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ Put the app credentials in a local .env first (see .env.example):
 Add http://localhost:8080/callback to the app's "Authorized redirect URLs"
 (LinkedIn developer portal -> your app -> Auth) before running this.
 """
-import argparse, http.server, os, secrets, subprocess, sys, urllib.parse, webbrowser
+import argparse, http.server, os, secrets, subprocess, sys, time, urllib.parse, webbrowser
 import requests
 from dotenv import load_dotenv
 
@@ -26,7 +26,13 @@ _result = {}
 
 class _CallbackHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
-        _result.update(urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query))
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        # Browsers probe localhost with favicon and prefetch requests; only the
+        # redirect actually carrying the grant should end the wait.
+        if not ({"code", "error"} & query.keys()):
+            self.send_error(404)
+            return
+        _result.update(query)
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.end_headers()
@@ -51,8 +57,13 @@ def authorize(client_id, client_secret):
     print(f"Opening browser to authorize:\n{url}\n")
     webbrowser.open(url)
 
-    print("Waiting for the LinkedIn redirect...")
-    server.handle_request()
+    print("Waiting for the LinkedIn redirect...", flush=True)
+    server.timeout = 5
+    deadline = time.monotonic() + 900
+    while not _result:
+        if time.monotonic() > deadline:
+            sys.exit("Timed out waiting for the LinkedIn redirect.")
+        server.handle_request()
     server.server_close()
 
     if "error" in _result:
@@ -92,6 +103,8 @@ def main():
     info = requests.get(USERINFO_URL, timeout=15, headers={"Authorization": f"Bearer {access_token}"})
     if info.ok:
         urn = f"urn:li:person:{info.json()['sub']}"
+        print(f"\nAuthorized as: {info.json().get('name', '?')} ({urn})")
+        print("The bot will post as this profile — stop now if that is the wrong account.")
 
     print(f"\nAccess token expires in {tokens.get('expires_in')}s (~60 days).")
     if refresh_token:

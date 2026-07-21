@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """Run the LinkedIn OAuth flow locally and print the secrets the bot needs.
 
-    python linkedin_auth.py --account bcm --client-id XXX --client-secret YYY
+    python linkedin_auth.py --account bcm
+
+Put the app credentials in a local .env first (see .env.example):
+
+    BCM_LI_CLIENT_ID=...
+    BCM_LI_CLIENT_SECRET=...
 
 Add http://localhost:8080/callback to the app's "Authorized redirect URLs"
 (LinkedIn developer portal -> your app -> Auth) before running this.
 """
-import argparse, http.server, secrets, sys, urllib.parse, webbrowser
+import argparse, http.server, os, secrets, subprocess, sys, urllib.parse, webbrowser
 import requests
+from dotenv import load_dotenv
 
 AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -66,14 +72,19 @@ def authorize(client_id, client_secret):
 
 
 def main():
+    load_dotenv()
     p = argparse.ArgumentParser()
     p.add_argument("--account", choices=["bcm", "roatan"], required=True)
-    p.add_argument("--client-id", required=True)
-    p.add_argument("--client-secret", required=True)
+    p.add_argument("--repo", default="jemsonchan/weather-bot")
     args = p.parse_args()
     prefix = "BCM" if args.account == "bcm" else "ROA"
 
-    tokens = authorize(args.client_id, args.client_secret)
+    client_id = os.getenv(f"{prefix}_LI_CLIENT_ID", "")
+    client_secret = os.getenv(f"{prefix}_LI_CLIENT_SECRET", "")
+    if not (client_id and client_secret):
+        sys.exit(f"Set {prefix}_LI_CLIENT_ID and {prefix}_LI_CLIENT_SECRET in .env (see .env.example).")
+
+    tokens = authorize(client_id, client_secret)
     access_token = tokens["access_token"]
     refresh_token = tokens.get("refresh_token")
 
@@ -91,14 +102,21 @@ def main():
               "script every 60 days. To enable refresh, request it for the app in the LinkedIn\n"
               "developer portal.")
 
-    print("\nRun these to update the GitHub secrets:\n")
-    print(f'  gh secret set {prefix}_LI_ACCESS_TOKEN -R jemsonchan/weather-bot -b "{access_token}"')
+    to_set = {f"{prefix}_LI_ACCESS_TOKEN": access_token}
     if urn:
-        print(f'  gh secret set {prefix}_LI_AUTHOR_URN -R jemsonchan/weather-bot -b "{urn}"')
+        to_set[f"{prefix}_LI_AUTHOR_URN"] = urn
     if refresh_token:
-        print(f'  gh secret set {prefix}_LI_REFRESH_TOKEN -R jemsonchan/weather-bot -b "{refresh_token}"')
-        print(f'  gh secret set {prefix}_LI_CLIENT_ID -R jemsonchan/weather-bot -b "{args.client_id}"')
-        print(f'  gh secret set {prefix}_LI_CLIENT_SECRET -R jemsonchan/weather-bot -b "{args.client_secret}"')
+        to_set[f"{prefix}_LI_REFRESH_TOKEN"] = refresh_token
+        to_set[f"{prefix}_LI_CLIENT_ID"] = client_id
+        to_set[f"{prefix}_LI_CLIENT_SECRET"] = client_secret
+
+    # Piped via stdin, never argv or stdout — these values must not end up in
+    # shell history, process listings or terminal scrollback.
+    print(f"\nWriting {len(to_set)} secrets to {args.repo}:")
+    for name, value in to_set.items():
+        r = subprocess.run(["gh", "secret", "set", name, "-R", args.repo],
+                           input=value, text=True, capture_output=True)
+        print(f"  {name}: {'ok' if r.returncode == 0 else 'FAILED — ' + r.stderr.strip()}")
 
 
 if __name__ == "__main__":
